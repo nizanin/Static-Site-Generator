@@ -1,7 +1,7 @@
 import unittest
 
-from textnode import TextNode, TextType
-from htmlnode import HTMLNode, LeafNode
+from textnode import TextNode, TextType, text_node_to_html_node
+from htmlnode import HTMLNode, LeafNode, ParentNode
 
 
 class TestTextNode(unittest.TestCase):
@@ -81,6 +81,120 @@ class TestLeafNode(unittest.TestCase):
         result = node.to_html()
         self.assertIn('<a href="https://www.google.com">', result)
         self.assertTrue(result.endswith("Click me!</a>"))
+
+class TestParentNode(unittest.TestCase):
+    def test_to_html_with_children(self):
+        child_node = LeafNode("span", "child")
+        parent_node = ParentNode("div", [child_node])
+        self.assertEqual(parent_node.to_html(), "<div><span>child</span></div>")
+
+    def test_to_html_with_grandchildren(self):
+        grandchild_node = LeafNode("b", "grandchild")
+        child_node = ParentNode("span", [grandchild_node])
+        parent_node = ParentNode("div", [child_node])
+        self.assertEqual(
+            parent_node.to_html(),
+            "<div><span><b>grandchild</b></span></div>",
+        )
+
+    def test_to_html_with_multiple_children(self):
+        child1 = LeafNode("p", "First")
+        child2 = LeafNode("p", "Second")
+        parent = ParentNode("div", [child1, child2])
+        self.assertEqual(
+            parent.to_html(),
+            "<div><p>First</p><p>Second</p></div>"
+        )
+
+    def test_to_html_with_props(self):
+        child = LeafNode("span", "text")
+        parent = ParentNode("div", [child], props={"class": "container"})
+        result = parent.to_html()
+        self.assertIn('<div class="container">', result)
+        self.assertTrue(result.endswith("<span>text</span></div>"))
+
+    def test_to_html_with_no_tag(self):
+        child = LeafNode("span", "child")
+        parent = ParentNode(None, [child])
+        with self.assertRaises(ValueError):
+            parent.to_html()
+
+    def test_empty_children_raises(self):
+        with self.assertRaises(ValueError):
+            ParentNode("div", [])
+
+    def test_children_must_be_list(self):
+        with self.assertRaises(ValueError):
+            ParentNode("div", "not-a-list")
+
+    def test_nested_parentnodes_multiple_levels(self):
+        leaf1 = LeafNode("i", "leaf1")
+        leaf2 = LeafNode("b", "leaf2")
+        child1 = ParentNode("span", [leaf1, leaf2])
+        child2 = LeafNode("p", "child2")
+        parent = ParentNode("div", [child1, child2])
+        self.assertEqual(
+            parent.to_html(),
+            "<div><span><i>leaf1</i><b>leaf2</b></span><p>child2</p></div>"
+        )
+
+class TestTextNodeToHtmlNode(unittest.TestCase):
+    def test_text(self):
+        node = TextNode("This is a text node", TextType.TEXT)
+        html_node = text_node_to_html_node(node)
+        self.assertIsInstance(html_node, LeafNode)
+        self.assertEqual(html_node.tag, None)
+        self.assertEqual(html_node.value, "This is a text node")
+
+    def test_bold(self):
+        node = TextNode("Bold text", TextType.BOLD)
+        html_node = text_node_to_html_node(node)
+        self.assertIsInstance(html_node, LeafNode)
+        self.assertEqual(html_node.tag, "b")
+        self.assertEqual(html_node.value, "Bold text")
+
+    def test_italic(self):
+        node = TextNode("Italic text", TextType.ITALIC)
+        html_node = text_node_to_html_node(node)
+        self.assertEqual(html_node.tag, "i")
+        self.assertEqual(html_node.value, "Italic text")
+
+    def test_code(self):
+        node = TextNode("print('hi')", TextType.CODE)
+        html_node = text_node_to_html_node(node)
+        self.assertEqual(html_node.tag, "code")
+        self.assertEqual(html_node.value, "print('hi')")
+
+    def test_link(self):
+        node = TextNode("Google", TextType.LINK, url="https://google.com")
+        html_node = text_node_to_html_node(node)
+        self.assertEqual(html_node.tag, "a")
+        self.assertEqual(html_node.value, "Google")
+        self.assertEqual(html_node.props, {"href": "https://google.com"})
+
+    def test_link_missing_url_raises(self):
+        node = TextNode("Broken link", TextType.LINK)
+        with self.assertRaises(ValueError):
+            text_node_to_html_node(node)
+
+    def test_image(self):
+        node = TextNode("Alt text", TextType.IMAGE, url="image.png")
+        html_node = text_node_to_html_node(node)
+        self.assertEqual(html_node.tag, "img")
+        self.assertEqual(html_node.value, "")
+        self.assertEqual(html_node.props, {"src": "image.png", "alt": "Alt text"})
+
+    def test_image_missing_url_raises(self):
+        node = TextNode("Alt text", TextType.IMAGE)
+        with self.assertRaises(ValueError):
+            text_node_to_html_node(node)
+
+    def test_unknown_type_raises(self):
+        class FakeType:
+            pass
+        node = TextNode("???", FakeType)
+        with self.assertRaises(ValueError):
+            text_node_to_html_node(node)
 
 if __name__ == "__main__":
     unittest.main()
