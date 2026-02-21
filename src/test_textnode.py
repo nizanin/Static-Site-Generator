@@ -1,7 +1,7 @@
 import unittest
 
 from textnode import TextNode, TextType
-from htmlnode import HTMLNode
+from htmlnode import HTMLNode, LeafNode
 
 
 class TestTextNode(unittest.TestCase):
@@ -35,7 +35,7 @@ class TestHTMLNode(unittest.TestCase):
             value="Hello",
             props={"class": "text"}
         )
-        self.assertEqual(node.props_to_html(), 'class="text"')
+        self.assertEqual(node.props_to_html(), ' class="text"')
 
     def test_props_to_html_multiple_props(self):
         node = HTMLNode(
@@ -58,6 +58,29 @@ class TestHTMLNode(unittest.TestCase):
             props=None
         )
         self.assertEqual(node.props_to_html(), '')
+
+class TestLeafNode(unittest.TestCase):
+    def test_leaf_to_html_p(self):
+        node = LeafNode("p", "Hello, world!")
+        self.assertEqual(node.to_html(), "<p>Hello, world!</p>")
+
+    def test_leaf_to_html_no_tag(self):
+        node = LeafNode(None, "Just text")
+        self.assertEqual(node.to_html(), "Just text")
+
+    def test_leaf_value_required(self):
+        with self.assertRaises(ValueError):
+            LeafNode("p", None)
+
+    def test_leaf_to_html_with_prop_1(self):
+        node = LeafNode("p", "Hello, world!", {"id": "12345"})
+        self.assertEqual(node.to_html(), '<p id="12345">Hello, world!</p>')
+    
+    def test_leaf_to_html_with_props_2(self):
+        node = LeafNode("a", "Click me!", {"href": "https://www.google.com"})
+        result = node.to_html()
+        self.assertIn('<a href="https://www.google.com">', result)
+        self.assertTrue(result.endswith("Click me!</a>"))
 
 if __name__ == "__main__":
     unittest.main()
