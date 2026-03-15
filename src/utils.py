@@ -29,3 +29,14 @@ def copy_directory(src, dst):
 
     # Start recursion from root
     _copy(src, dst)
+
+def extract_title(markdown: str) -> str:
+    """
+    Extract the first H1 title from markdown text (line starting with a single #).
+    Raises an exception if no H1 is found.
+    """
+    for line in markdown.splitlines():
+        line = line.strip()
+        if line.startswith("# ") and not line.startswith("##"):
+            return line[2:].strip()  # usuwa "# " i ewentualne spacje
+    raise ValueError("No H1 header found in markdown")
