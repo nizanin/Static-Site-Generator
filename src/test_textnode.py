@@ -2,7 +2,7 @@ import unittest
 
 from textnode import TextNode, TextType, text_node_to_html_node
 from htmlnode import HTMLNode, LeafNode, ParentNode
-from textnode_utils import split_nodes_delimiter, extract_markdown_images, extract_markdown_links, split_nodes_image, split_nodes_link
+from textnode_utils import split_nodes_delimiter, extract_markdown_images, extract_markdown_links, split_nodes_image, split_nodes_link, text_to_textnodes
  
 
 
@@ -376,6 +376,53 @@ class TestSplitNodes(unittest.TestCase):
                 TextNode("two", TextType.LINK, "url2"),
             ],
             result
+        )
+    
+    def test_text_to_textnodes(self):
+        text = "This is **text** with an _italic_ word and a `code block`"
+
+        nodes = text_to_textnodes(text)
+
+        self.assertListEqual(
+            [
+                TextNode("This is ", TextType.TEXT),
+                TextNode("text", TextType.BOLD),
+                TextNode(" with an ", TextType.TEXT),
+                TextNode("italic", TextType.ITALIC),
+                TextNode(" word and a ", TextType.TEXT),
+                TextNode("code block", TextType.CODE),
+            ],
+            nodes
+        )
+
+    def test_text_with_image(self):
+        text = "see ![image](https://img.com/a.png)"
+
+        nodes = text_to_textnodes(text)
+
+        self.assertListEqual(
+            [
+                TextNode("see ", TextType.TEXT),
+                TextNode("image", TextType.IMAGE, "https://img.com/a.png")
+            ],
+            nodes
+        )
+    
+    def test_full_markdown(self):
+        text = "This is **bold** and _italic_ and `code`"
+
+        nodes = text_to_textnodes(text)
+
+        self.assertListEqual(
+            [
+                TextNode("This is ", TextType.TEXT),
+                TextNode("bold", TextType.BOLD),
+                TextNode(" and ", TextType.TEXT),
+                TextNode("italic", TextType.ITALIC),
+                TextNode(" and ", TextType.TEXT),
+                TextNode("code", TextType.CODE),
+            ],
+            nodes
         )
 
 
