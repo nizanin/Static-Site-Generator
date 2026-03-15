@@ -31,3 +31,23 @@ def generate_page(from_path: str, template_path: str, dest_path: str):
         f.write(final_html)
 
     print(f"Page generated at {dest_path}")
+
+
+def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
+    for entry in os.listdir(dir_path_content):
+        entry_path = os.path.join(dir_path_content, entry)
+        dest_path = os.path.join(dest_dir_path, entry)
+
+        if os.path.isdir(entry_path):
+            # jeśli katalog → rekurencja
+            generate_pages_recursive(entry_path, template_path, dest_path)
+
+        elif entry.endswith(".md"):
+            # zmień rozszerzenie na .html
+            dest_file = dest_path.replace(".md", ".html")
+
+            generate_page(
+                entry_path,
+                template_path,
+                dest_file
+            )

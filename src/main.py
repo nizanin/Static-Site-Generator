@@ -1,5 +1,5 @@
 from utils import copy_directory
-from page_generator import generate_page
+from page_generator import generate_pages_recursive
 
 def main():
     # Kopiujemy wszystkie statyczne pliki
@@ -9,10 +9,10 @@ def main():
     # generate_site()
     print("Done! The public/ directory is ready.")
 
-    generate_page(
-        from_path="content/index.md",
-        template_path="template.html",
-        dest_path="public/index.html"
+    generate_pages_recursive(
+        "content",
+        "template.html",
+        "public"
     )
 
 if __name__ == "__main__":
