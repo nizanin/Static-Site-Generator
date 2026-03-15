@@ -2,7 +2,7 @@ import os
 from block_markdown import markdown_to_html_node  # Twój parser
 from utils import extract_title  # zakładając, że extract_title jest w osobnym pliku
 
-def generate_page(from_path: str, template_path: str, dest_path: str):
+def generate_page(from_path: str, template_path: str, dest_path: str, basepath: str):
     print(f"Generating page from {from_path} to {dest_path} using {template_path}")
 
     # Wczytaj markdown
@@ -23,6 +23,10 @@ def generate_page(from_path: str, template_path: str, dest_path: str):
     # Zamień placeholdery w template
     final_html = template_content.replace("{{ Title }}", title).replace("{{ Content }}", html_content)
 
+    # zamiana ścieżek dla GitHub Pages
+    final_html = final_html.replace('href="/', f'href="{basepath}')
+    final_html = final_html.replace('src="/', f'src="{basepath}')
+
     # Utwórz katalogi, jeśli nie istnieją
     os.makedirs(os.path.dirname(dest_path), exist_ok=True)
 
@@ -33,14 +37,14 @@ def generate_page(from_path: str, template_path: str, dest_path: str):
     print(f"Page generated at {dest_path}")
 
 
-def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
+def generate_pages_recursive(dir_path_content, template_path, dest_dir_path, basepath):
     for entry in os.listdir(dir_path_content):
         entry_path = os.path.join(dir_path_content, entry)
         dest_path = os.path.join(dest_dir_path, entry)
 
         if os.path.isdir(entry_path):
             # jeśli katalog → rekurencja
-            generate_pages_recursive(entry_path, template_path, dest_path)
+            generate_pages_recursive(entry_path, template_path, dest_path, basepath)
 
         elif entry.endswith(".md"):
             # zmień rozszerzenie na .html
@@ -49,5 +53,6 @@ def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
             generate_page(
                 entry_path,
                 template_path,
-                dest_file
+                dest_file,
+                basepath
             )
