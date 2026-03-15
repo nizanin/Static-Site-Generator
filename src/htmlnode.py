@@ -8,7 +8,23 @@ class HTMLNode:
         self.props = props
 
     def to_html(self):
-        raise NotImplementedError
+        # Jeśli node nie ma tagu, zwracamy tylko tekst
+        if not self.tag:
+            return self.text or ""
+
+        # Zbieramy atrybuty w string
+        attr_str = ""
+        if self.props:
+            attr_str = " " + " ".join(f'{k}="{v}"' for k, v in self.props.items())
+
+        # Renderujemy dzieci
+        children_html = "".join(child.to_html() for child in self.children)
+
+        # Dla <img> zwracamy tylko <img ...> bez children
+        if self.tag == "img":
+            return f"<img{attr_str}>"
+
+        return f"<{self.tag}{attr_str}>{children_html}</{self.tag}>"
     
     def props_to_html(self):
         if self.props:
