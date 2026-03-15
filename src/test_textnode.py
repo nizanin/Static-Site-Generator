@@ -2,7 +2,8 @@ import unittest
 
 from textnode import TextNode, TextType, text_node_to_html_node
 from htmlnode import HTMLNode, LeafNode, ParentNode
-from textnode_utils import split_nodes_delimiter
+from textnode_utils import split_nodes_delimiter, extract_markdown_images, extract_markdown_links, split_nodes_image, split_nodes_link
+ 
 
 
 class TestTextNode(unittest.TestCase):
@@ -253,9 +254,129 @@ class TestSplitNodesDelimiter(unittest.TestCase):
             assert True
 
 
+class TestExtractMarkdown(unittest.TestCase):
+    def test_extract_markdown_images(self):
+        matches = extract_markdown_images(
+            "This is text with an ![image](https://i.imgur.com/zjjcJKZ.png)"
+        )
+        self.assertListEqual(
+            [("image", "https://i.imgur.com/zjjcJKZ.png")],
+            matches
+        )
+
+    def test_extract_multiple_images(self):
+        matches = extract_markdown_images(
+            "![rick](https://img.com/rick.png) and ![morty](https://img.com/morty.png)"
+        )
+        self.assertListEqual(
+            [
+                ("rick", "https://img.com/rick.png"),
+                ("morty", "https://img.com/morty.png")
+            ],
+            matches
+        )
+
+    def test_extract_no_images(self):
+        matches = extract_markdown_images(
+            "This text has no images"
+        )
+        self.assertListEqual([], matches)
+
+    def test_extract_markdown_links(self):
+        matches = extract_markdown_links(
+            "This is a link [to boot dev](https://www.boot.dev)"
+        )
+        self.assertListEqual(
+            [("to boot dev", "https://www.boot.dev")],
+            matches
+        )
+
+    def test_extract_multiple_links(self):
+        matches = extract_markdown_links(
+            "Visit [google](https://google.com) and [youtube](https://youtube.com)"
+        )
+        self.assertListEqual(
+            [
+                ("google", "https://google.com"),
+                ("youtube", "https://youtube.com")
+            ],
+            matches
+        )
+
+    def test_extract_no_links(self):
+        matches = extract_markdown_links(
+            "There are no links here"
+        )
+        self.assertListEqual([], matches)
 
 
+class TestSplitNodes(unittest.TestCase):
 
+    def test_split_images(self):
+        node = TextNode(
+            "This is text with an ![image](https://i.imgur.com/zjjcJKZ.png)",
+            TextType.TEXT
+        )
+
+        result = split_nodes_image([node])
+        print(result)
+        self.assertListEqual(
+            [
+                TextNode("This is text with an ", TextType.TEXT),
+                TextNode("image", TextType.IMAGE, "https://i.imgur.com/zjjcJKZ.png")
+            ],
+            result
+        )
+
+    def test_multiple_images(self):
+        node = TextNode(
+            "![one](url1) and ![two](url2)",
+            TextType.TEXT
+        )
+
+        result = split_nodes_image([node])
+
+        self.assertListEqual(
+            [
+                TextNode("one", TextType.IMAGE, "url1"),
+                TextNode(" and ", TextType.TEXT),
+                TextNode("two", TextType.IMAGE, "url2"),
+            ],
+            result
+        )
+
+    def test_split_links(self):
+        node = TextNode(
+            "go to [boot.dev](https://boot.dev)",
+            TextType.TEXT
+        )
+
+        result = split_nodes_link([node])
+
+        self.assertListEqual(
+            [
+                TextNode("go to ", TextType.TEXT),
+                TextNode("boot.dev", TextType.LINK, "https://boot.dev")
+            ],
+            result
+        )
+
+    def test_multiple_links(self):
+        node = TextNode(
+            "[one](url1) and [two](url2)",
+            TextType.TEXT
+        )
+
+        result = split_nodes_link([node])
+
+        self.assertListEqual(
+            [
+                TextNode("one", TextType.LINK, "url1"),
+                TextNode(" and ", TextType.TEXT),
+                TextNode("two", TextType.LINK, "url2"),
+            ],
+            result
+        )
 
 
 
