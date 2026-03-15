@@ -2,6 +2,7 @@ import unittest
 
 from textnode import TextNode, TextType, text_node_to_html_node
 from htmlnode import HTMLNode, LeafNode, ParentNode
+from textnode_utils import split_nodes_delimiter
 
 
 class TestTextNode(unittest.TestCase):
@@ -195,6 +196,71 @@ class TestTextNodeToHtmlNode(unittest.TestCase):
         node = TextNode("???", FakeType)
         with self.assertRaises(ValueError):
             text_node_to_html_node(node)
+
+
+class TestSplitNodesDelimiter(unittest.TestCase):
+    def test_code_split(self):
+        node = TextNode("Hello `code` world", TextType.TEXT)
+
+        result = split_nodes_delimiter([node], "`", TextType.CODE)
+
+        assert result == [
+            TextNode("Hello ", TextType.TEXT),
+            TextNode("code", TextType.CODE),
+            TextNode(" world", TextType.TEXT),
+        ]
+
+
+    def test_bold_split(self):
+        node = TextNode("Hello **bold** world", TextType.TEXT)
+
+        result = split_nodes_delimiter([node], "**", TextType.BOLD)
+
+        assert result == [
+            TextNode("Hello ", TextType.TEXT),
+            TextNode("bold", TextType.BOLD),
+            TextNode(" world", TextType.TEXT),
+        ]
+
+
+    def test_italic_split(self):
+        node = TextNode("Hello _italic_ world", TextType.TEXT)
+
+        result = split_nodes_delimiter([node], "_", TextType.ITALIC)
+
+        assert result == [
+            TextNode("Hello ", TextType.TEXT),
+            TextNode("italic", TextType.ITALIC),
+            TextNode(" world", TextType.TEXT),
+        ]
+
+
+    def test_no_delimiter(self):
+        node = TextNode("Hello world", TextType.TEXT)
+
+        result = split_nodes_delimiter([node], "`", TextType.CODE)
+
+        assert result == [node]
+
+
+    def test_missing_closing_delimiter(self):
+        node = TextNode("Hello `code world", TextType.TEXT)
+
+        try:
+            split_nodes_delimiter([node], "`", TextType.CODE)
+            assert False
+        except Exception:
+            assert True
+
+
+
+
+
+
+
+
+
+
 
 if __name__ == "__main__":
     unittest.main()
